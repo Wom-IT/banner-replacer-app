@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Banner Manager</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+        padding: 40px;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 28px;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .section {
+        margin-bottom: 30px;
+      }
+
+      .section-title {
+        color: #444;
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 15px;
+        color: #667eea;
+      }
+
+      .banner-preview {
+        background: #f5f5f5;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        border: 2px solid #e0e0e0;
+      }
+
+      .banner-preview img {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 6px;
+        display: none;
+      }
+
+      .banner-preview.loaded img {
+        display: block;
+      }
+
+      .banner-preview.loading::after {
+        content: "Loading banner...";
+        color: #999;
+        display: block;
+        padding: 40px 20px;
+      }
+
+      .banner-preview.error {
+        color: #d32f2f;
+        padding: 40px 20px;
+      }
+
+      .upload-area {
+        border: 2px dashed #667eea;
+        border-radius: 8px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9ff;
+      }
+
+      .upload-area:hover {
+        border-color: #764ba2;
+        background: #f0f2ff;
+      }
+
+      .upload-area.dragover {
+        border-color: #764ba2;
+        background: #e8ebff;
+      }
+
+      .upload-area input[type="file"] {
+        display: none;
+      }
+
+      .upload-text {
+        color: #333;
+        font-weight: 500;
+        margin-bottom: 5px;
+      }
+
+      .upload-hint {
+        color: #999;
+        font-size: 12px;
+      }
+
+      .file-name {
+        color: #667eea;
+        font-weight: 600;
+        margin-top: 10px;
+        font-size: 14px;
+      }
+
+      .preview-new {
+        margin-top: 15px;
+        background: #f5f5f5;
+        border-radius: 6px;
+        padding: 15px;
+        text-align: center;
+        display: none;
+      }
+
+      .preview-new.show {
+        display: block;
+      }
+
+      .preview-new img {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 4px;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      button {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background: #e0e0e0;
+        color: #333;
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        background: #d0d0d0;
+      }
+
+      .message {
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 20px;
+        display: none;
+        font-size: 14px;
+      }
+
+      .message.show {
+        display: block;
+      }
+
+      .message.success {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-left: 4px solid #4caf50;
+      }
+
+      .message.error {
+        background: #ffebee;
+        color: #c62828;
+        border-left: 4px solid #f44336;
+      }
+
+      .message.warning {
+        background: #fff3e0;
+        color: #e65100;
+        border-left: 4px solid #ff9800;
+      }
+
+      .message.info {
+        background: #e3f2fd;
+        color: #1565c0;
+        border-left: 4px solid #2196f3;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .confirmation-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .confirmation-modal.show {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 400px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .modal-text {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+      }
+
+      .modal-buttons {
+        display: flex;
+        gap: 10px;
+      }
+
+      .modal-buttons button {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Signature Banner Manager</h1>
+
+      <!-- Test Mode Toggle -->
+      <div class="section" style="background: #fff9e6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ff9800;">
+        <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
+          <input type="checkbox" id="testModeToggle" style="width: 18px; height: 18px; cursor: pointer; margin-right: 10px;">
+          <span style="font-weight: 600; color: #e65100;">🧪 Test Mode</span>
+          <span style="font-size: 12px; color: #ff6f00; margin-left: 8px;">(uses test-banner.png - safe to test)</span>
+        </label>
+      </div>
+
+      <!-- Current Banner Section -->
+      <div class="section">
+        <div class="section-title">Current Banner</div>
+        <div class="banner-preview loading" id="bannerPreview"></div>
+      </div>
+
+      <!-- Upload Section -->
+      <div class="section">
+        <div class="section-title">Upload New Banner</div>
+        <div class="upload-area" id="uploadArea">
+          <div class="upload-text">Click to upload or drag & drop</div>
+          <div class="upload-hint">PNG or JPG (recommended: 1920x400px)</div>
+          <input type="file" id="fileInput" accept="image/png,image/jpeg" />
+          <div class="file-name" id="fileName"></div>
+        </div>
+        <div class="preview-new" id="previewNew">
+          <div style="color: #999; font-size: 12px; margin-bottom: 8px">
+            Preview:
+          </div>
+          <img id="previewImg" />
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-group">
+        <button class="btn-primary" id="uploadBtn" disabled>
+          Replace Banner
+        </button>
+        <button class="btn-secondary" id="clearBtn" disabled>Clear</button>
+      </div>
+
+      <!-- Messages -->
+      <div class="message" id="message"></div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="confirmation-modal" id="confirmModal">
+      <div class="modal-content">
+        <div class="modal-title">Confirm Replacement?</div>
+        <div class="modal-text">
+          This will:
+          <ul style="margin-left: 20px; margin-top: 10px">
+            <li>Archive the current banner</li>
+            <li>Upload the new banner</li>
+            <li>Changes go live in ~30 minutes</li>
+          </ul>
+        </div>
+        <div class="modal-buttons">
+          <button class="btn-secondary" id="cancelBtn">Cancel</button>
+          <button class="btn-primary" id="confirmBtn">
+            <span
+              class="spinner"
+              id="confirmSpinner"
+              style="display: none"
+            ></span
+            >Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Configuration
+      const CONFIG = {
+        storageAccount: "wombatsstorageacct",
+        container: "sigs-assets",
+        sasToken:
+          "sv=2026-02-06&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2028-06-18T16:19:54Z&st=2026-06-19T08:04:54Z&spr=https&sig=yOI0O7APTZ3pjs8yXvHSji6S0hiqErxJ%2BCrjYzML5OY%3D",
+        bannerName: "wide-banner.png",
+        archiveFolder: "not-in-use",
+      };
+
+      // State
+      let selectedFile = null;
+      let testMode = false;
+
+      // Test mode configuration
+      const TEST_CONFIG = {
+        bannerName: "test-banner.png",
+        archiveFolder: "test-archives",
+      };
+
+      // Get active config based on test mode
+      function getActiveConfig() {
+        return testMode ? TEST_CONFIG : CONFIG;
+      }
+
+      // Generate blob URL
+      function getBlobUrl(blobName) {
+        return `https://${CONFIG.storageAccount}.blob.core.windows.net/${CONFIG.container}/${blobName}?${CONFIG.sasToken}`;
+      }
+
+      // Elements
+      const bannerPreview = document.getElementById("bannerPreview");
+      const uploadArea = document.getElementById("uploadArea");
+      const fileInput = document.getElementById("fileInput");
+      const fileName = document.getElementById("fileName");
+      const previewNew = document.getElementById("previewNew");
+      const previewImg = document.getElementById("previewImg");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const messageEl = document.getElementById("message");
+      const confirmModal = document.getElementById("confirmModal");
+      const confirmBtn = document.getElementById("confirmBtn");
+      const cancelBtn = document.getElementById("cancelBtn");
+      const confirmSpinner = document.getElementById("confirmSpinner");
+
+      // Show message
+      function showMessage(text, type = "info") {
+        const prefix = testMode ? "🧪 [TEST] " : "";
+        messageEl.textContent = prefix + text;
+        messageEl.className = `message show ${type}`;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // Load current banner
+      async function loadCurrentBanner() {
+        try {
+          bannerPreview.className = "banner-preview loading";
+          const config = getActiveConfig();
+          const url = getBlobUrl(config.bannerName);
+          console.log(`[${testMode ? "TEST" : "PROD"}] Loading banner from: ${config.bannerName}`);
+          
+          const img = document.createElement("img");
+          img.src = url;
+          img.onload = () => {
+            bannerPreview.innerHTML = "";
+            bannerPreview.appendChild(img);
+            bannerPreview.className = "banner-preview loaded";
+            if (testMode) {
+              const label = document.createElement("div");
+              label.style.cssText = "position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 600;";
+              label.textContent = "🧪 TEST MODE";
+              bannerPreview.style.position = "relative";
+              bannerPreview.appendChild(label);
+            }
+          };
+          img.onerror = () => {
+            bannerPreview.className = "banner-preview error";
+            bannerPreview.innerHTML = "❌ Could not load current banner";
+          };
+        } catch (err) {
+          console.error("Load error:", err);
+          bannerPreview.className = "banner-preview error";
+          bannerPreview.innerHTML = "❌ Error loading banner";
+        }
+      }
+
+      // Handle file selection
+      function handleFileSelect(file) {
+        if (!file.type.startsWith("image/")) {
+          showMessage("Please select an image file", "error");
+          return;
+        }
+
+        selectedFile = file;
+        fileName.textContent = `Selected: ${file.name}`;
+        previewNew.classList.add("show");
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        uploadBtn.disabled = false;
+        clearBtn.disabled = false;
+      }
+
+      // File input change
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files[0]) {
+          handleFileSelect(e.target.files[0]);
+        }
+      });
+
+      // Upload area interactions
+      uploadArea.addEventListener("click", () => fileInput.click());
+
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+
+      uploadArea.addEventListener("dragleave", () => {
+        uploadArea.classList.remove("dragover");
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+        if (e.dataTransfer.files[0]) {
+          handleFileSelect(e.dataTransfer.files[0]);
+        }
+      });
+
+      // Clear selection
+      clearBtn.addEventListener("click", () => {
+        selectedFile = null;
+        fileInput.value = "";
+        fileName.textContent = "";
+        previewNew.classList.remove("show");
+        uploadBtn.disabled = true;
+        clearBtn.disabled = true;
+        messageEl.className = "message";
+      });
+
+      // Show confirmation modal
+      uploadBtn.addEventListener("click", () => {
+        confirmModal.classList.add("show");
+      });
+
+      // Cancel confirmation
+      cancelBtn.addEventListener("click", () => {
+        confirmModal.classList.remove("show");
+      });
+
+      // Perform upload
+      confirmBtn.addEventListener("click", async () => {
+        if (!selectedFile) return;
+
+        confirmSpinner.style.display = "inline-block";
+        confirmBtn.disabled = true;
+
+        try {
+          const config = getActiveConfig();
+          const mode = testMode ? "[TEST MODE]" : "[PRODUCTION]";
+          
+          // Step 1: Archive old banner
+          showMessage("📦 Archiving current banner...", "info");
+          const timestamp = new Date().getTime();
+          const archiveName = `${config.archiveFolder}/wide-banner-${timestamp}.png`;
+          const sourceUrl = getBlobUrl(config.bannerName);
+          const destUrl = getBlobUrl(archiveName);
+          
+          console.log(`${mode} Archive Source: ${config.bannerName}`);
+          console.log(`${mode} Archive Destination: ${archiveName}`);
+          
+          // Copy blob
+          const copyResponse = await fetch(destUrl, {
+            method: "PUT",
+            headers: {
+              "x-ms-copy-source": sourceUrl,
+            },
+          });
+          
+          if (!copyResponse.ok) {
+            throw new Error(`Failed to archive: ${copyResponse.status} ${copyResponse.statusText}`);
+          }
+          console.log(`${mode} Archive successful (HTTP ${copyResponse.status})`);
+
+          // Step 2: Upload new banner
+          showMessage("⬆️ Uploading new banner...", "info");
+          const uploadUrl = getBlobUrl(config.bannerName);
+          const arrayBuffer = await selectedFile.arrayBuffer();
+          
+          console.log(`${mode} Uploading new banner: ${config.bannerName}`);
+          console.log(`${mode} File size: ${arrayBuffer.byteLength} bytes`);
+          console.log(`${mode} File type: ${selectedFile.type}`);
+          
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "PUT",
+            headers: {
+              "x-ms-blob-type": "BlockBlob",
+              "Content-Type": selectedFile.type,
+            },
+            body: arrayBuffer,
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+          }
+          console.log(`${mode} Upload successful (HTTP ${uploadResponse.status})`);
+
+          // Step 3: Success
+          confirmModal.classList.remove("show");
+          confirmSpinner.style.display = "none";
+          confirmBtn.disabled = false;
+
+          const successMsg = testMode 
+            ? "✅ Test upload successful!\n\n📋 Check console and Azure Storage Explorer to verify the test files."
+            : "✅ Banner replaced successfully!\n\n⏱️ Changes will be live in approximately 30 minutes due to CDN caching.";
+          
+          showMessage(successMsg, "success");
+          console.log(`${mode} Operation completed successfully`);
+
+          // Reset
+          selectedFile = null;
+          fileInput.value = "";
+          fileName.textContent = "";
+          previewNew.classList.remove("show");
+          uploadBtn.disabled = true;
+          clearBtn.disabled = true;
+
+          // Reload banner preview
+          setTimeout(() => loadCurrentBanner(), 1000);
+        } catch (err) {
+          console.error("Upload error:", err);
+          confirmSpinner.style.display = "none";
+          confirmBtn.disabled = false;
+          showMessage(`❌ Error: ${err.message}`, "error");
+        }
+      });
+
+      // Load banner on start
+      loadCurrentBanner();
+
+      // Test mode toggle
+      const testModeToggle = document.getElementById("testModeToggle");
+      testModeToggle.addEventListener("change", (e) => {
+        testMode = e.target.checked;
+        console.log(`🧪 Test mode: ${testMode ? "ON" : "OFF"}`);
+        // Reload banner when switching modes
+        loadCurrentBanner();
+        // Reset file selection
+        selectedFile = null;
+        fileInput.value = "";
+        fileName.textContent = "";
+        previewNew.classList.remove("show");
+        uploadBtn.disabled = true;
+        clearBtn.disabled = true;
+      });
+    </script>
+  </body>
+</html>
