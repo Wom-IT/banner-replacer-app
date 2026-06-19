@@ -298,15 +298,6 @@
     <div class="container">
       <h1>Signature Banner Manager</h1>
 
-      <!-- Test Mode Toggle -->
-      <div class="section" style="background: #fff9e6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ff9800;">
-        <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
-          <input type="checkbox" id="testModeToggle" style="width: 18px; height: 18px; cursor: pointer; margin-right: 10px;">
-          <span style="font-weight: 600; color: #e65100;">🧪 Test Mode</span>
-          <span style="font-size: 12px; color: #ff6f00; margin-left: 8px;">(uses test-banner.png - safe to test)</span>
-        </label>
-      </div>
-
       <!-- Current Banner Section -->
       <div class="section">
         <div class="section-title">Current Banner</div>
@@ -381,18 +372,6 @@
 
       // State
       let selectedFile = null;
-      let testMode = false;
-
-      // Test mode configuration
-      const TEST_CONFIG = {
-        bannerName: "test-banner.png",
-        archiveFolder: "test-archives",
-      };
-
-      // Get active config based on test mode
-      function getActiveConfig() {
-        return testMode ? TEST_CONFIG : CONFIG;
-      }
 
       // Generate blob URL
       function getBlobUrl(blobName) {
@@ -416,8 +395,7 @@
 
       // Show message
       function showMessage(text, type = "info") {
-        const prefix = testMode ? "🧪 [TEST] " : "";
-        messageEl.textContent = prefix + text;
+        messageEl.textContent = text;
         messageEl.className = `message show ${type}`;
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -426,9 +404,7 @@
       async function loadCurrentBanner() {
         try {
           bannerPreview.className = "banner-preview loading";
-          const config = getActiveConfig();
-          const url = getBlobUrl(config.bannerName);
-          console.log(`[${testMode ? "TEST" : "PROD"}] Loading banner from: ${config.bannerName}`);
+          const url = getBlobUrl(CONFIG.bannerName);
           
           const img = document.createElement("img");
           img.src = url;
@@ -436,13 +412,6 @@
             bannerPreview.innerHTML = "";
             bannerPreview.appendChild(img);
             bannerPreview.className = "banner-preview loaded";
-            if (testMode) {
-              const label = document.createElement("div");
-              label.style.cssText = "position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 600;";
-              label.textContent = "🧪 TEST MODE";
-              bannerPreview.style.position = "relative";
-              bannerPreview.appendChild(label);
-            }
           };
           img.onerror = () => {
             bannerPreview.className = "banner-preview error";
@@ -532,18 +501,11 @@
         confirmBtn.disabled = true;
 
         try {
-          const config = getActiveConfig();
-          const mode = testMode ? "[TEST MODE]" : "[PRODUCTION]";
-          
           // Step 1: Archive old banner
           showMessage("📦 Archiving current banner...", "info");
-          const timestamp = new Date().getTime();
-          const archiveName = `${config.archiveFolder}/wide-banner-${timestamp}.png`;
-          const sourceUrl = getBlobUrl(config.bannerName);
+          const archiveName = `${CONFIG.archiveFolder}/wide-banner-${new Date().getTime()}.png`;
+          const sourceUrl = getBlobUrl(CONFIG.bannerName);
           const destUrl = getBlobUrl(archiveName);
-          
-          console.log(`${mode} Archive Source: ${config.bannerName}`);
-          console.log(`${mode} Archive Destination: ${archiveName}`);
           
           // Copy blob
           const copyResponse = await fetch(destUrl, {
@@ -554,18 +516,13 @@
           });
           
           if (!copyResponse.ok) {
-            throw new Error(`Failed to archive: ${copyResponse.status} ${copyResponse.statusText}`);
+            throw new Error(`Failed to archive: ${copyResponse.status}`);
           }
-          console.log(`${mode} Archive successful (HTTP ${copyResponse.status})`);
 
           // Step 2: Upload new banner
           showMessage("⬆️ Uploading new banner...", "info");
-          const uploadUrl = getBlobUrl(config.bannerName);
+          const uploadUrl = getBlobUrl(CONFIG.bannerName);
           const arrayBuffer = await selectedFile.arrayBuffer();
-          
-          console.log(`${mode} Uploading new banner: ${config.bannerName}`);
-          console.log(`${mode} File size: ${arrayBuffer.byteLength} bytes`);
-          console.log(`${mode} File type: ${selectedFile.type}`);
           
           const uploadResponse = await fetch(uploadUrl, {
             method: "PUT",
@@ -577,21 +534,18 @@
           });
           
           if (!uploadResponse.ok) {
-            throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+            throw new Error(`Upload failed: ${uploadResponse.status}`);
           }
-          console.log(`${mode} Upload successful (HTTP ${uploadResponse.status})`);
 
           // Step 3: Success
           confirmModal.classList.remove("show");
           confirmSpinner.style.display = "none";
           confirmBtn.disabled = false;
 
-          const successMsg = testMode 
-            ? "✅ Test upload successful!\n\n📋 Check console and Azure Storage Explorer to verify the test files."
-            : "✅ Banner replaced successfully!\n\n⏱️ Changes will be live in approximately 30 minutes due to CDN caching.";
-          
-          showMessage(successMsg, "success");
-          console.log(`${mode} Operation completed successfully`);
+          showMessage(
+            "✅ Banner replaced successfully!\n\n⏱️ Changes will be live in approximately 30 minutes due to CDN caching.",
+            "success",
+          );
 
           // Reset
           selectedFile = null;
@@ -613,22 +567,6 @@
 
       // Load banner on start
       loadCurrentBanner();
-
-      // Test mode toggle
-      const testModeToggle = document.getElementById("testModeToggle");
-      testModeToggle.addEventListener("change", (e) => {
-        testMode = e.target.checked;
-        console.log(`🧪 Test mode: ${testMode ? "ON" : "OFF"}`);
-        // Reload banner when switching modes
-        loadCurrentBanner();
-        // Reset file selection
-        selectedFile = null;
-        fileInput.value = "";
-        fileName.textContent = "";
-        previewNew.classList.remove("show");
-        uploadBtn.disabled = true;
-        clearBtn.disabled = true;
-      });
     </script>
   </body>
 </html>
