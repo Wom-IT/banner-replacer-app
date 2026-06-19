@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Banner Manager</title>
     <!-- Microsoft Authentication Library (msal-browser from CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.42.0/dist/msal-browser.min.js" defer onerror="window.__msalLoadFailed=true"></script>
+    <script
+      src="./msal-browser.min.js"
+      defer
+      onerror="window.__msalLoadFailed = true"
+    ></script>
     <style>
       * {
         margin: 0;
@@ -528,11 +532,16 @@
       // ============================================================
       async function login() {
         if (!myMSALObj) {
-          showMessage("Authentication not ready. Please refresh the page.", "error");
+          showMessage(
+            "Authentication not ready. Please refresh the page.",
+            "error",
+          );
           return;
         }
         try {
-          const loginResponse = await myMSALObj.loginPopup({ scopes: ["user.read"] });
+          const loginResponse = await myMSALObj.loginPopup({
+            scopes: ["user.read"],
+          });
 
           sessionStorage.setItem("accessToken", loginResponse.accessToken);
           sessionStorage.setItem("idToken", loginResponse.idToken);
@@ -559,7 +568,8 @@
           const accounts = myMSALObj.getAllAccounts();
           if (accounts.length > 0) {
             const account = accounts[0];
-            document.getElementById("userName").textContent = account.name || account.username;
+            document.getElementById("userName").textContent =
+              account.name || account.username;
           }
         } catch (error) {
           console.error("Error loading user info:", error);
@@ -567,8 +577,12 @@
       }
 
       function showAuthContainer() {
-        document.getElementById("authContainer").classList.remove("authenticated");
-        document.getElementById("appContainer").classList.remove("authenticated");
+        document
+          .getElementById("authContainer")
+          .classList.remove("authenticated");
+        document
+          .getElementById("appContainer")
+          .classList.remove("authenticated");
       }
 
       function showAuthenticatedUI() {
@@ -588,7 +602,10 @@
           await waitForMsal(20, 300); // ~6 seconds total
         } catch (err) {
           console.error(err);
-          showMessage("Authentication service failed to load. Please refresh the page.", "error");
+          showMessage(
+            "Authentication service failed to load. Please refresh the page.",
+            "error",
+          );
           return;
         }
 
