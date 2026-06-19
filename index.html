@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Banner Manager</title>
     <!-- Microsoft Authentication Library -->
-    <script src="https://alcdn.msftauth.net/lib/1.4.17/js/msal.min.js"></script>
+    <script src="https://alcdn.msftauth.net/lib/1.4.17/js/msal.min.js" defer></script>
     <style>
       * {
         margin: 0;
@@ -396,11 +396,22 @@
       <div class="container">
         <div class="auth-header">
           <h1>Signature Banner Manager</h1>
-          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 8px;
+            "
+          >
             <div class="user-info">
               <span class="user-name" id="userName">Loading...</span>
             </div>
-            <button class="btn-secondary" id="logoutBtn" style="padding: 8px 12px; font-size: 12px; margin: 0;">
+            <button
+              class="btn-secondary"
+              id="logoutBtn"
+              style="padding: 8px 12px; font-size: 12px; margin: 0"
+            >
               Sign out
             </button>
           </div>
@@ -472,12 +483,12 @@
       // ============================================================
       // AUTHENTICATION SETUP
       // ============================================================
-      // TODO: Replace with your actual Azure AD app registration details
       const msalConfig = {
         auth: {
-          clientId: "YOUR_APP_ID_HERE", // Get from Azure Portal -> App registrations
-          authority: "https://login.microsoftonline.com/YOUR_TENANT_ID_HERE", // Your tenant ID
-          redirectUri: window.location.origin, // Current page URL
+          clientId: "896dee08-77e8-495b-9fe1-d7ae35416c4a",
+          authority:
+            "https://login.microsoftonline.com/a890865f-6169-4fe9-b996-5bb2752584d1",
+          redirectUri: window.location.origin,
         },
         cache: {
           cacheLocation: "localStorage",
@@ -485,21 +496,42 @@
         },
       };
 
-      // MSAL instance
-      const myMSALObj = new msal.PublicClientApplication(msalConfig);
+      // MSAL instance - initialize after script loads
+      let myMSALObj = null;
+
+      // Wait for MSAL to load
+      function initMSAL() {
+        if (typeof msal === "undefined") {
+          console.error("MSAL library failed to load");
+          showMessage("Authentication service failed to load. Please refresh the page.", "error");
+          return;
+        }
+        myMSALObj = new msal.PublicClientApplication(msalConfig);
+      }
+
+      // Initialize MSAL when script is ready
+      if (typeof msal !== "undefined") {
+        initMSAL();
+      } else {
+        window.addEventListener("load", initMSAL);
+      }
 
       // ============================================================
       // AUTHENTICATION FUNCTIONS
       // ============================================================
       async function login() {
+        if (!myMSALObj) {
+          showMessage("Authentication not ready. Please refresh the page.", "error");
+          return;
+        }
         try {
           const loginResponse = await myMSALObj.loginPopup({
             scopes: ["user.read"],
           });
-          
+
           sessionStorage.setItem("accessToken", loginResponse.accessToken);
           sessionStorage.setItem("idToken", loginResponse.idToken);
-          
+
           showAuthenticatedUI();
           loadUserInfo();
         } catch (error) {
@@ -509,17 +541,21 @@
       }
 
       function logout() {
-        myMSALObj.logout();
+        if (myMSALObj) {
+          myMSALObj.logout();
+        }
         sessionStorage.clear();
         showAuthContainer();
       }
 
       async function loadUserInfo() {
+        if (!myMSALObj) return;
         try {
           const accounts = myMSALObj.getAllAccounts();
           if (accounts.length > 0) {
             const account = accounts[0];
-            document.getElementById("userName").textContent = account.name || account.username;
+            document.getElementById("userName").textContent =
+              account.name || account.username;
           }
         } catch (error) {
           console.error("Error loading user info:", error);
@@ -527,8 +563,12 @@
       }
 
       function showAuthContainer() {
-        document.getElementById("authContainer").classList.remove("authenticated");
-        document.getElementById("appContainer").classList.remove("authenticated");
+        document
+          .getElementById("authContainer")
+          .classList.remove("authenticated");
+        document
+          .getElementById("appContainer")
+          .classList.remove("authenticated");
       }
 
       function showAuthenticatedUI() {
@@ -537,12 +577,18 @@
       }
 
       function isAuthenticated() {
+        if (!myMSALObj) return false;
         const accounts = myMSALObj.getAllAccounts();
         return accounts.length > 0;
       }
 
       // Check authentication on page load
       window.addEventListener("load", async () => {
+        if (!myMSALObj) {
+          console.warn("MSAL not initialized yet, retrying...");
+          setTimeout(() => window.dispatchEvent(new Event("load")), 500);
+          return;
+        }
         try {
           const response = await myMSALObj.handleRedirectPromise();
           
@@ -614,7 +660,7 @@
         try {
           bannerPreview.className = "banner-preview loading";
           const url = getBlobUrl(CONFIG.bannerName);
-          
+
           const img = document.createElement("img");
           img.src = url;
           img.onload = () => {
@@ -715,7 +761,7 @@
           const archiveName = `${CONFIG.archiveFolder}/wide-banner-${new Date().getTime()}.png`;
           const sourceUrl = getBlobUrl(CONFIG.bannerName);
           const destUrl = getBlobUrl(archiveName);
-          
+
           // Copy blob
           const copyResponse = await fetch(destUrl, {
             method: "PUT",
@@ -723,7 +769,7 @@
               "x-ms-copy-source": sourceUrl,
             },
           });
-          
+
           if (!copyResponse.ok) {
             throw new Error(`Failed to archive: ${copyResponse.status}`);
           }
@@ -732,7 +778,7 @@
           showMessage("⬆️ Uploading new banner...", "info");
           const uploadUrl = getBlobUrl(CONFIG.bannerName);
           const arrayBuffer = await selectedFile.arrayBuffer();
-          
+
           const uploadResponse = await fetch(uploadUrl, {
             method: "PUT",
             headers: {
@@ -741,7 +787,7 @@
             },
             body: arrayBuffer,
           });
-          
+
           if (!uploadResponse.ok) {
             throw new Error(`Upload failed: ${uploadResponse.status}`);
           }
