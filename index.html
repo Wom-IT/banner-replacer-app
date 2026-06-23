@@ -566,13 +566,13 @@ async function callFunction() {
     );
 
     const data = await response.text();
-    console.log("API Antwort:", data);
+    return data;
 
   } catch (err) {
     console.error("Token/API Fehler:", err);
   }
 }
-uploadBtn.addEventListener("click", callFunction);
+
 
 
       async function loadUserInfo() {
@@ -630,12 +630,12 @@ uploadBtn.addEventListener("click", callFunction);
             showAuthenticatedUI();
             loadUserInfo();
             loadCurrentBanner();
-            await callFunction();
+           
           } else if (isAuthenticated()) {
             showAuthenticatedUI();
             loadUserInfo();
             loadCurrentBanner();
-            await callFunction();
+     
           }
         } catch (error) {
           console.error("Redirect handling failed:", error);
@@ -650,7 +650,7 @@ uploadBtn.addEventListener("click", callFunction);
         storageAccount: "wombatsstorageacct",
         container: "sigs-assets",
         sasToken:
-          "sv=2026-02-06&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2028-06-18T16:19:54Z&st=2026-06-19T08:04:54Z&spr=https&sig=yOI0O7APTZ3pjs8yXvHSji6S0hiqErxJ%2BCrjYzML5OY%3D",
+          callFunction(),
         bannerName: "wide-banner.png",
         archiveFolder: "not-in-use",
       };
@@ -774,6 +774,7 @@ uploadBtn.addEventListener("click", callFunction);
       uploadBtn.addEventListener("click", () => {
         confirmModal.classList.add("show");
       });
+    
 
       // Cancel confirmation
       cancelBtn.addEventListener("click", () => {
