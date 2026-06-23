@@ -531,26 +531,49 @@
         }
       }
 
+
       async function logout() {
-        if (!myMSALObj) {
-          return;
-        }
+  if (!myMSALObj) return;
 
-        const account = myMSALObj.getAllAccounts()[0];
+  const account = myMSALObj.getAllAccounts()[0];
 
-        try {
-          await myMSALObj.logoutRedirect({
-            account: account,
-            postLogoutRedirectUri: window.location.origin,
-          });
-        } catch (error) {
-          console.error("Logout failed:", error);
+  await myMSALObj.logoutRedirect({
+    account: account,
+    postLogoutRedirectUri: window.location.origin,
+  });
+}
+async function callFunction() {
+  if (!myMSALObj) return;
 
-          // Fallback: clear local UI state anyway
-          sessionStorage.clear();
-          showAuthContainer();
+  const account = myMSALObj.getAllAccounts()[0];
+
+  try {
+    const tokenResponse = await myMSALObj.acquireTokenSilent({
+      account: account,
+      scopes: ["api://896dee08-77e8-495b-9fe1-d7ae35416c4a/access_as_user"]
+    });
+
+    const accessToken = tokenResponse.accessToken;
+
+    const response = await fetch(
+      "https://binner-manager-fn-dhamhmf5g5afe8c4.westeurope-01.azurewebsites.net/api/HttpTrigger1",
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
         }
       }
+    );
+
+    const data = await response.text();
+    return data;
+
+  } catch (err) {
+    console.error("Token/API Fehler:", err);
+  }
+}
+
+
 
       async function loadUserInfo() {
         if (!myMSALObj) return;
@@ -607,10 +630,12 @@
             showAuthenticatedUI();
             loadUserInfo();
             loadCurrentBanner();
+           
           } else if (isAuthenticated()) {
             showAuthenticatedUI();
             loadUserInfo();
             loadCurrentBanner();
+     
           }
         } catch (error) {
           console.error("Redirect handling failed:", error);
@@ -625,7 +650,7 @@
         storageAccount: "wombatsstorageacct",
         container: "sigs-assets",
         sasToken:
-          "sv=2026-02-06&ss=bfqt&srt=o&sp=rwdlacupiytfx&se=2028-06-18T16:19:54Z&st=2026-06-19T08:04:54Z&spr=https&sig=yOI0O7APTZ3pjs8yXvHSji6S0hiqErxJ%2BCrjYzML5OY%3D",
+          callFunction(),
         bannerName: "wide-banner.png",
         archiveFolder: "not-in-use",
       };
@@ -749,6 +774,7 @@
       uploadBtn.addEventListener("click", () => {
         confirmModal.classList.add("show");
       });
+    
 
       // Cancel confirmation
       cancelBtn.addEventListener("click", () => {
