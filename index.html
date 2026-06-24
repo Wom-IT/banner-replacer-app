@@ -118,5 +118,375 @@
         </div>
       </div>
     </div>
+
+    <script>
+      // ============================================================
+      // AUTHENTICATION SETUP
+      // ============================================================
+      const msalConfig = {
+        auth: {
+          clientId: "896dee08-77e8-495b-9fe1-d7ae35416c4a",
+          authority:
+            "https://login.microsoftonline.com/a890865f-6169-4fe9-b996-5bb2752584d1",
+          redirectUri: "https://wom-it.github.io/banner-replacer-app/",
+          postLogoutRedirectUri:
+            "https://wom-it.github.io/banner-replacer-app/",
+        },
+        cache: {
+          cacheLocation: "localStorage",
+          storeAuthStateInCookie: false,
+        },
+      };
+
+      // MSAL instance - will be created once library is available
+      let myMSALObj = null;
+
+      // Poll for MSAL presence with retries, then initialize
+
+      async function initMsal() {
+        if (typeof msal === "undefined") {
+          throw new Error("MSAL library is not loaded");
+        }
+
+        myMSALObj = new msal.PublicClientApplication(msalConfig);
+        await myMSALObj.initialize();
+      }
+
+      // ============================================================
+      // AUTHENTICATION FUNCTIONS
+      // ============================================================
+
+      async function login() {
+        try {
+          await myMSALObj.loginRedirect({
+            scopes: ["User.Read"],
+            prompt: "select_account",
+          });
+        } catch (error) {
+          console.error("Login redirect failed:", error);
+          alert("Login failed: " + (error?.message || error));
+        }
+      }
+
+      async function logout() {
+        if (!myMSALObj) return;
+
+        const account = myMSALObj.getAllAccounts()[0];
+
+        await myMSALObj.logoutRedirect({
+          account: account,
+          postLogoutRedirectUri: window.location.origin,
+        });
+      }
+      async function callFunction() {
+        if (!myMSALObj) return;
+
+        const account = myMSALObj.getAllAccounts()[0];
+
+        try {
+          const tokenResponse = await myMSALObj.acquireTokenSilent({
+            account: account,
+            scopes: [
+              "api://896dee08-77e8-495b-9fe1-d7ae35416c4a/access_as_user",
+            ],
+          });
+
+          const accessToken = tokenResponse.accessToken;
+
+          const response = await fetch(
+            "https://binner-manager-fn-dhamhmf5g5afe8c4.westeurope-01.azurewebsites.net/api/HttpTrigger1",
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            },
+          );
+
+          const data = await response.text();
+          return data;
+        } catch (err) {
+          console.error("Token/API Fehler:", err);
+        }
+      }
+
+      async function loadUserInfo() {
+        if (!myMSALObj) return;
+        try {
+          const accounts = myMSALObj.getAllAccounts();
+          if (accounts.length > 0) {
+            const account = accounts[0];
+            document.getElementById("userName").textContent =
+              account.name || account.username;
+          }
+        } catch (error) {
+          console.error("Error loading user info:", error);
+        }
+      }
+
+      function showAuthContainer() {
+        document
+          .getElementById("authContainer")
+          .classList.remove("authenticated");
+        document
+          .getElementById("appContainer")
+          .classList.remove("authenticated");
+      }
+
+      function showAuthenticatedUI() {
+        document.getElementById("authContainer").classList.add("authenticated");
+        document.getElementById("appContainer").classList.add("authenticated");
+      }
+
+      function isAuthenticated() {
+        if (!myMSALObj) return false;
+        const accounts = myMSALObj.getAllAccounts();
+        return accounts.length > 0;
+      }
+
+      // On load, wait for MSAL then handle redirect / show UI
+
+      window.addEventListener("load", async () => {
+        try {
+          await initMsal();
+          console.log("MSAL initialized");
+        } catch (err) {
+          console.error("MSAL init failed:", err);
+          alert("Authentication service failed to initialize.");
+          return;
+        }
+
+        try {
+          const response = await myMSALObj.handleRedirectPromise();
+
+          if (response) {
+            sessionStorage.setItem("accessToken", response.accessToken || "");
+            sessionStorage.setItem("idToken", response.idToken || "");
+            showAuthenticatedUI();
+            loadUserInfo();
+            loadCurrentBanner();
+          } else if (isAuthenticated()) {
+            showAuthenticatedUI();
+            loadUserInfo();
+            loadCurrentBanner();
+          }
+        } catch (error) {
+          console.error("Redirect handling failed:", error);
+        }
+      });
+
+      // ============================================================
+      // BANNER MANAGER CODE
+      // ============================================================
+      // Configuration
+      const CONFIG = {
+        storageAccount: "wombatsstorageacct",
+        container: "sigs-assets",
+        sasToken: callFunction(),
+        bannerName: "wide-banner.png",
+        archiveFolder: "not-in-use",
+      };
+
+      // State
+      let selectedFile = null;
+
+      // Generate blob URL
+      function getBlobUrl(blobName) {
+        return `https://${CONFIG.storageAccount}.blob.core.windows.net/${CONFIG.container}/${blobName}?${CONFIG.sasToken}`;
+      }
+
+      // Elements
+      const bannerPreview = document.getElementById("bannerPreview");
+      const uploadArea = document.getElementById("uploadArea");
+      const fileInput = document.getElementById("fileInput");
+      const fileName = document.getElementById("fileName");
+      const previewNew = document.getElementById("previewNew");
+      const previewImg = document.getElementById("previewImg");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const messageEl = document.getElementById("message");
+      const confirmModal = document.getElementById("confirmModal");
+      const confirmBtn = document.getElementById("confirmBtn");
+      const cancelBtn = document.getElementById("cancelBtn");
+      const confirmSpinner = document.getElementById("confirmSpinner");
+      const loginBtn = document.getElementById("loginBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      // Show message
+      function showMessage(text, type = "info") {
+        messageEl.textContent = text;
+        messageEl.className = `message show ${type}`;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // Load current banner
+      async function loadCurrentBanner() {
+        try {
+          bannerPreview.className = "banner-preview loading";
+          const url = getBlobUrl(CONFIG.bannerName);
+
+          const img = document.createElement("img");
+          img.src = url;
+          img.onload = () => {
+            bannerPreview.innerHTML = "";
+            bannerPreview.appendChild(img);
+            bannerPreview.className = "banner-preview loaded";
+          };
+          img.onerror = () => {
+            bannerPreview.className = "banner-preview error";
+            bannerPreview.innerHTML = "❌ Could not load current banner";
+          };
+        } catch (err) {
+          console.error("Load error:", err);
+          bannerPreview.className = "banner-preview error";
+          bannerPreview.innerHTML = "❌ Error loading banner";
+        }
+      }
+
+      // Handle file selection
+      function handleFileSelect(file) {
+        if (!file.type.startsWith("image/")) {
+          showMessage("Please select an image file", "error");
+          return;
+        }
+
+        selectedFile = file;
+        fileName.textContent = `Selected: ${file.name}`;
+        previewNew.classList.add("show");
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        uploadBtn.disabled = false;
+        clearBtn.disabled = false;
+      }
+
+      // File input change
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files[0]) {
+          handleFileSelect(e.target.files[0]);
+        }
+      });
+
+      // Upload area interactions
+      uploadArea.addEventListener("click", () => fileInput.click());
+
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+
+      uploadArea.addEventListener("dragleave", () => {
+        uploadArea.classList.remove("dragover");
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+        if (e.dataTransfer.files[0]) {
+          handleFileSelect(e.dataTransfer.files[0]);
+        }
+      });
+
+      // Clear selection
+      clearBtn.addEventListener("click", () => {
+        selectedFile = null;
+        fileInput.value = "";
+        fileName.textContent = "";
+        previewNew.classList.remove("show");
+        uploadBtn.disabled = true;
+        clearBtn.disabled = true;
+        messageEl.className = "message";
+      });
+
+      // Show confirmation modal
+      uploadBtn.addEventListener("click", () => {
+        confirmModal.classList.add("show");
+      });
+
+      // Cancel confirmation
+      cancelBtn.addEventListener("click", () => {
+        confirmModal.classList.remove("show");
+      });
+
+      // Perform upload
+      confirmBtn.addEventListener("click", async () => {
+        if (!selectedFile) return;
+
+        confirmSpinner.style.display = "inline-block";
+        confirmBtn.disabled = true;
+
+        try {
+          // Step 1: Archive old banner
+          showMessage("📦 Archiving current banner...", "info");
+          const archiveName = `${CONFIG.archiveFolder}/wide-banner-${new Date().getTime()}.png`;
+          const sourceUrl = getBlobUrl(CONFIG.bannerName);
+          const destUrl = getBlobUrl(archiveName);
+
+          // Copy blob
+          const copyResponse = await fetch(destUrl, {
+            method: "PUT",
+            headers: {
+              "x-ms-copy-source": sourceUrl,
+            },
+          });
+
+          if (!copyResponse.ok) {
+            throw new Error(`Failed to archive: ${copyResponse.status}`);
+          }
+
+          // Step 2: Upload new banner
+          showMessage("⬆️ Uploading new banner...", "info");
+          const uploadUrl = getBlobUrl(CONFIG.bannerName);
+          const arrayBuffer = await selectedFile.arrayBuffer();
+
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "PUT",
+            headers: {
+              "x-ms-blob-type": "BlockBlob",
+              "Content-Type": selectedFile.type,
+            },
+            body: arrayBuffer,
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error(`Upload failed: ${uploadResponse.status}`);
+          }
+
+          // Step 3: Success
+          confirmModal.classList.remove("show");
+          confirmSpinner.style.display = "none";
+          confirmBtn.disabled = false;
+
+          showMessage(
+            "✅ Banner replaced successfully!\n\n⏱️ Changes will be live in approximately 30 minutes due to CDN caching.",
+            "success",
+          );
+
+          // Reset
+          selectedFile = null;
+          fileInput.value = "";
+          fileName.textContent = "";
+          previewNew.classList.remove("show");
+          uploadBtn.disabled = true;
+          clearBtn.disabled = true;
+
+          // Reload banner preview
+          setTimeout(() => loadCurrentBanner(), 1000);
+        } catch (err) {
+          console.error("Upload error:", err);
+          confirmSpinner.style.display = "none";
+          confirmBtn.disabled = false;
+          showMessage(`❌ Error: ${err.message}`, "error");
+        }
+      });
+
+      // Auth event listeners
+      loginBtn.addEventListener("click", login);
+      logoutBtn.addEventListener("click", logout);
+    </script>
   </body>
 </html>
