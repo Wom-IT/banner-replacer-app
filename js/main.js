@@ -21,6 +21,32 @@ import {
   bindBannerEvents,
 } from "./banner.js";
 
+function initTabs() {
+  const tabBanner = document.getElementById("tabBanner");
+  const tabEmails = document.getElementById("tabEmails");
+
+  const bannerSection = document.getElementById("bannerSection");
+  const emailSection = document.getElementById("emailSection");
+
+  if (!tabBanner || !tabEmails) return;
+
+  tabBanner.addEventListener("click", () => {
+    tabBanner.classList.add("active");
+    tabEmails.classList.remove("active");
+
+    bannerSection.classList.remove("hidden");
+    emailSection.classList.add("hidden");
+  });
+
+  tabEmails.addEventListener("click", () => {
+    tabEmails.classList.add("active");
+    tabBanner.classList.remove("active");
+
+    emailSection.classList.remove("hidden");
+    bannerSection.classList.add("hidden");
+  });
+}
+
 window.addEventListener("load", async () => {
   try {
     await initializeAuth();
@@ -34,11 +60,12 @@ window.addEventListener("load", async () => {
   try {
     const response = await handleRedirect();
 
-    if (response) {
+    /*if (response) {
       sessionStorage.setItem("accessToken", response.accessToken || "");
       sessionStorage.setItem("idToken", response.idToken || "");
 
       showAuthenticatedUI();
+      document.getElementById("userName").textContent = "Local Test User";
       loadUserInfo(getCurrentAccount());
 
       await initBannerManager();
@@ -51,7 +78,15 @@ window.addEventListener("load", async () => {
       await loadCurrentBanner();
     } else {
       showUnauthenticatedUI();
-    }
+    }*/
+
+    // TEMP: bypass auth for local testing
+    showAuthenticatedUI();
+    document.getElementById("userName").textContent = "Local Test User";
+
+    // skip backend calls for now
+    // await initBannerManager();
+    // await loadCurrentBanner();
   } catch (error) {
     console.error("Redirect handling failed:", error);
   }
@@ -60,4 +95,5 @@ window.addEventListener("load", async () => {
   logoutBtn.addEventListener("click", logout);
 
   bindBannerEvents();
+  initTabs();
 });

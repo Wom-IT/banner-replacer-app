@@ -57,39 +57,121 @@
           </div>
         </div>
 
-        <!-- Current Banner Section -->
-        <div class="section">
-          <div class="section-title">Current Banner</div>
-          <div class="banner-preview loading" id="bannerPreview"></div>
-        </div>
-
-        <!-- Upload Section -->
-        <div class="section">
-          <div class="section-title">Upload New Banner</div>
-          <div class="upload-area" id="uploadArea">
-            <div class="upload-text">Click to upload or drag & drop</div>
-            <div class="upload-hint">PNG or JPG (recommended: 600x195px)</div>
-            <input type="file" id="fileInput" accept="image/png,image/jpeg" />
-            <div class="file-name" id="fileName"></div>
-          </div>
-          <div class="preview-new" id="previewNew">
-            <div style="color: #999; font-size: 12px; margin-bottom: 8px">
-              Preview:
-            </div>
-            <img id="previewImg" />
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="button-group">
-          <button class="btn-primary" id="uploadBtn" disabled>
-            Replace Banner
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+          <button class="tab-btn active" id="tabBanner">
+            Signature Banner
           </button>
-          <button class="btn-secondary" id="clearBtn" disabled>Clear</button>
+          <button class="tab-btn" id="tabEmails">Email Templates</button>
         </div>
 
-        <!-- Messages -->
-        <div class="message" id="message"></div>
+        <!-- Current Banner Section -->
+        <div class="bannerSection">
+          <div class="section">
+            <div class="section-title">Current Banner</div>
+            <div class="banner-preview loading" id="bannerPreview"></div>
+          </div>
+
+          <!-- Upload Section -->
+          <div class="section">
+            <div class="section-title">Upload New Banner</div>
+            <div class="upload-area" id="uploadArea">
+              <div class="upload-text">Click to upload or drag & drop</div>
+              <div class="upload-hint">PNG or JPG (recommended: 600x195px)</div>
+              <input type="file" id="fileInput" accept="image/png,image/jpeg" />
+              <div class="file-name" id="fileName"></div>
+            </div>
+            <div class="preview-new" id="previewNew">
+              <div style="color: #999; font-size: 12px; margin-bottom: 8px">
+                Preview:
+              </div>
+              <img id="previewImg" />
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="button-group">
+            <button class="btn-primary" id="uploadBtn" disabled>
+              Replace Banner
+            </button>
+            <button class="btn-secondary" id="clearBtn" disabled>Clear</button>
+          </div>
+
+          <!-- Messages -->
+          <div class="message" id="message"></div>
+        </div>
+
+        <div id="emailSection" class="hidden">
+          <!-- Selection -->
+          <div class="section">
+            <div class="section-title">Select Template</div>
+
+            <div class="email-controls">
+              <select id="houseSelect">
+                <option>Budapest</option>
+                <option>Leipzig</option>
+                <option>London</option>
+                <option>Munich Hbf</option>
+                <option>Munich Werksviertel</option>
+                <option>Vienna</option>
+              </select>
+
+              <select id="emailTypeSelect">
+                <option>Confirmation</option>
+                <option>Online Check-in</option>
+                <option>After Check-out</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div class="section">
+            <div class="section-title">Email Preview</div>
+
+            <div class="email-preview">
+              <!-- HEADER -->
+              <div class="email-header">
+                <img src="https://via.placeholder.com/600x80?text=Header" />
+              </div>
+
+              <!-- TEXT -->
+              <div class="email-body">
+                <p>Hello John!</p>
+                <p>This is a preview of the selected email.</p>
+              </div>
+
+              <!-- HERO IMAGE -->
+              <div class="email-image hero">
+                <img
+                  src="https://via.placeholder.com/600x250?text=Hero+Image"
+                />
+              </div>
+
+              <!-- DETAILS -->
+              <div class="email-body">
+                <h3>Checking-in</h3>
+                <p>Check-in online and save time.</p>
+              </div>
+
+              <!-- CTA -->
+              <div class="email-cta">
+                <button>Online Check-in</button>
+              </div>
+
+              <!-- FOOTER IMAGE -->
+              <div class="email-image footer">
+                <img
+                  src="https://via.placeholder.com/600x120?text=Footer+Banner"
+                />
+              </div>
+
+              <!-- FOOTER -->
+              <div class="email-footer">
+                <p>Wombat's Hostel</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
