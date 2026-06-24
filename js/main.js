@@ -34,16 +34,16 @@ function initTabs() {
     tabBanner.classList.add("active");
     tabEmails.classList.remove("active");
 
-    bannerSection.classList.toggle("hidden");
-    emailSection.classList.toggle("hidden");
+    bannerSection.classList.remove("hidden");
+    emailSection.classList.add("hidden");
   });
 
   tabEmails.addEventListener("click", () => {
     tabEmails.classList.add("active");
     tabBanner.classList.remove("active");
 
-    emailSection.classList.toggle("hidden");
-    bannerSection.classList.toggle("hidden");
+    emailSection.classList.remove("hidden");
+    bannerSection.classList.add("hidden");
   });
 }
 
