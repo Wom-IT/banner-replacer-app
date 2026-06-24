@@ -493,7 +493,8 @@
           authority:
             "https://login.microsoftonline.com/a890865f-6169-4fe9-b996-5bb2752584d1",
           redirectUri: "https://wom-it.github.io/banner-replacer-app/",
-          postLogoutRedirectUri: "https://wom-it.github.io/banner-replacer-app/",
+          postLogoutRedirectUri:
+            "https://wom-it.github.io/banner-replacer-app/",
         },
         cache: {
           cacheLocation: "localStorage",
@@ -531,49 +532,47 @@
         }
       }
 
-
       async function logout() {
-  if (!myMSALObj) return;
+        if (!myMSALObj) return;
 
-  const account = myMSALObj.getAllAccounts()[0];
+        const account = myMSALObj.getAllAccounts()[0];
 
-  await myMSALObj.logoutRedirect({
-    account: account,
-    postLogoutRedirectUri: window.location.origin,
-  });
-}
-async function callFunction() {
-  if (!myMSALObj) return;
+        await myMSALObj.logoutRedirect({
+          account: account,
+          postLogoutRedirectUri: window.location.origin,
+        });
+      }
+      async function callFunction() {
+        if (!myMSALObj) return;
 
-  const account = myMSALObj.getAllAccounts()[0];
+        const account = myMSALObj.getAllAccounts()[0];
 
-  try {
-    const tokenResponse = await myMSALObj.acquireTokenSilent({
-      account: account,
-      scopes: ["api://896dee08-77e8-495b-9fe1-d7ae35416c4a/access_as_user"]
-    });
+        try {
+          const tokenResponse = await myMSALObj.acquireTokenSilent({
+            account: account,
+            scopes: [
+              "api://896dee08-77e8-495b-9fe1-d7ae35416c4a/access_as_user",
+            ],
+          });
 
-    const accessToken = tokenResponse.accessToken;
+          const accessToken = tokenResponse.accessToken;
 
-    const response = await fetch(
-      "https://binner-manager-fn-dhamhmf5g5afe8c4.westeurope-01.azurewebsites.net/api/HttpTrigger1",
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`
+          const response = await fetch(
+            "https://binner-manager-fn-dhamhmf5g5afe8c4.westeurope-01.azurewebsites.net/api/HttpTrigger1",
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            },
+          );
+
+          const data = await response.text();
+          return data;
+        } catch (err) {
+          console.error("Token/API Fehler:", err);
         }
       }
-    );
-
-    const data = await response.text();
-    return data;
-
-  } catch (err) {
-    console.error("Token/API Fehler:", err);
-  }
-}
-
-
 
       async function loadUserInfo() {
         if (!myMSALObj) return;
@@ -630,12 +629,10 @@ async function callFunction() {
             showAuthenticatedUI();
             loadUserInfo();
             loadCurrentBanner();
-           
           } else if (isAuthenticated()) {
             showAuthenticatedUI();
             loadUserInfo();
             loadCurrentBanner();
-     
           }
         } catch (error) {
           console.error("Redirect handling failed:", error);
@@ -649,8 +646,7 @@ async function callFunction() {
       const CONFIG = {
         storageAccount: "wombatsstorageacct",
         container: "sigs-assets",
-        sasToken:
-          callFunction(),
+        sasToken: callFunction(),
         bannerName: "wide-banner.png",
         archiveFolder: "not-in-use",
       };
@@ -774,7 +770,6 @@ async function callFunction() {
       uploadBtn.addEventListener("click", () => {
         confirmModal.classList.add("show");
       });
-    
 
       // Cancel confirmation
       cancelBtn.addEventListener("click", () => {
