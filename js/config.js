@@ -19,6 +19,6 @@ export const CONFIG = {
   archiveFolder: "not-in-use",
   functionUrl:
     "https://binner-manager-fn-dhamhmf5g5afe8c4.westeurope-01.azurewebsites.net/api/HttpTrigger1",
-  apiScope: "api://896dee08-77e8-495b-9fe1-d7ae35416c4a/access_as_user",
+  apiScope: "896dee08-77e8-495b-9fe1-d7ae35416c4a/access_as_user",
 };
 ``;
